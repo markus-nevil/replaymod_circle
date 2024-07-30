@@ -99,14 +99,26 @@ def dataframe_to_replaymod_json(df, name, millisec):
 
     return json.dumps(replaymod_json, indent=3)
 
-# Example usage
+## Define some variables to create your circular path
+
+# The X, Y, Z coordinates (from Minecraft) where the circle is centered
 center_x, center_y, center_z = 37899, 35, 28566
+
+# The radius of the circle
 radius = 200
+
+# The number of camera positions (points) around the circle. Try things out
 number_positions = 32
+
+# The number of milliseconds for the camera to complete the path
 millisec = 20000
-df = create_camera_path_dataframe(center_x, center_y, center_z, radius, number_positions, millisec)
+
+# The name for the camera path that you will see in ReplayMod
 name = "Circle32_new"
+
+df = create_camera_path_dataframe(center_x, center_y, center_z, radius, number_positions, millisec)
 replaymod_json = dataframe_to_replaymod_json(df, name, millisec)
 
+# Copy to your clipboard
 pyperclip.copy(replaymod_json)
 print(replaymod_json)
