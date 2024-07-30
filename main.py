@@ -7,11 +7,11 @@ def calculate_circle_points(center_x, center_y, center_z, radius, number_positio
     points = []
     for i in range(number_positions):
         angle = 2 * math.pi * i / number_positions
-        x = round(center_x + radius * math.cos(angle))
-        z = round(center_z + radius * math.sin(angle))
+        x = round(center_x + radius * math.cos(angle), 4)
+        z = round(center_z + radius * math.sin(angle), 4)
         points.append((x, center_y, z))
     # Add the first point again to complete the circle
-    points.append(points[0])
+    # points.append(points[0])
     return points
 
 def calculate_camera_orientation(point_x, point_y, point_z, center_x, center_y, center_z):
@@ -26,7 +26,7 @@ def calculate_camera_orientation(point_x, point_y, point_z, center_x, center_y, 
 
     return yaw, pitch, roll
 
-def create_camera_path_dataframe(center_x, center_y, center_z, radius, number_positions, millisec):
+def create_camera_path_dataframe(center_x, center_y, center_z, radius, number_positions, millisec, add_positions=1):
     points = calculate_circle_points(center_x, center_y, center_z, radius, number_positions)
     data = []
     time_interval = millisec / number_positions
@@ -37,7 +37,24 @@ def create_camera_path_dataframe(center_x, center_y, center_z, radius, number_po
         time = round(i * time_interval)
         data.append((x, y, z, yaw, pitch, roll, time))
 
+    for i in range(add_positions):
+
+        if i <= len(data):
+            data.append(data[i])
+            #change the time value of the new row to be the last time value + the time interval
+            data[-1] = list(data[-1])
+            data[-1][-1] = round(data[-2][-1] + time_interval)
+
+        else:
+            return
+
     df = pd.DataFrame(data, columns=['X', 'Y', 'Z', 'Yaw', 'Pitch', 'Roll', 'Time'])
+
+    # Find the difference in time between the rows and
+    # Take the max value of the time column divide it by the number of rows, round up, and redistribute the time values of df
+    # max_time = df['Time'].max()
+    # time_interval = math.ceil(max_time / len(df))
+    # df['Time'] = df.index * time_interval
     return df
 
 def dataframe_to_replaymod_json(df, name, millisec):
@@ -108,17 +125,23 @@ center_x, center_y, center_z = 37899, 35, 28566
 radius = 200
 
 # The number of camera positions (points) around the circle. Try things out
-number_positions = 32
+number_positions = 64
 
 # The number of milliseconds for the camera to complete the path
-millisec = 20000
+millisec = 10000
+
+# The number of extra positions for the camera to follow around the same path. Should be at least 1.
+# This extends the time the path takes, but does not alter how long the number_positions takes.
+# Example: number_positions = 10, add_positions = 5, millisec = 10000 takes 10000 milliseconds to complete around 10 positions
+# and then will take another 5000 milliseconds (millisec/number_positions * add_positions) to complete the next 10 positions.
+add_positions = 10
 
 # The name for the camera path that you will see in ReplayMod
-name = "Circle32_new"
+name = "Circle64"
 
-df = create_camera_path_dataframe(center_x, center_y, center_z, radius, number_positions, millisec)
+df = create_camera_path_dataframe(center_x, center_y, center_z, radius, number_positions, millisec, add_positions)
 replaymod_json = dataframe_to_replaymod_json(df, name, millisec)
 
 # Copy to your clipboard
 pyperclip.copy(replaymod_json)
-print(replaymod_json)
+
